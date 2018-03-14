@@ -26,13 +26,12 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
-
+import org.apache.cassandra.db.ConsistencyLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.cassandra.db.ConsistencyLevel;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
 
 /**
  * A class that contains configuration properties for the cassandra node it runs within.
@@ -196,6 +195,7 @@ public class Config
     /**
      * @deprecated since 4.0 This value was near useless, and we're not using it anymore
      */
+    @Deprecated
     public double commitlog_sync_batch_window_in_ms = Double.NaN;
     public double commitlog_sync_group_window_in_ms = Double.NaN;
     public int commitlog_sync_period_in_ms;
@@ -376,6 +376,11 @@ public class Config
     // parameters to adjust how much to delay startup until a certain amount of the cluster is connect to and marked alive
     public int block_for_peers_percentage = 70;
     public int block_for_peers_timeout_in_secs = 10;
+
+    // redis cache
+    public boolean redis_cache_enabled = false;
+    public int redis_port;
+    public String redis_host;
 
 
     /**

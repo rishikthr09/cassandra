@@ -17,24 +17,29 @@
  */
 package org.apache.cassandra.config;
 
+import static org.apache.cassandra.io.util.FileUtils.ONE_GB;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.net.*;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.file.FileStore;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.primitives.Ints;
-import com.google.common.primitives.Longs;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import org.apache.cassandra.auth.AllowAllInternodeAuthenticator;
 import org.apache.cassandra.auth.AuthConfig;
@@ -62,11 +67,17 @@ import org.apache.cassandra.net.RateBasedBackPressure;
 import org.apache.cassandra.security.EncryptionContext;
 import org.apache.cassandra.security.SSLFactory;
 import org.apache.cassandra.service.CacheService.CacheType;
+import org.apache.cassandra.service.RedisService;
 import org.apache.cassandra.utils.FBUtilities;
-
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.apache.cassandra.io.util.FileUtils.ONE_GB;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 
 public class DatabaseDescriptor
 {
@@ -325,6 +336,8 @@ public class DatabaseDescriptor
         applyEncryptionContext();
 
         applySslContextHotReload();
+
+        applyRedisConfig();
     }
 
     private static void applySimpleConfig()
@@ -761,6 +774,21 @@ public class DatabaseDescriptor
         return storagedir;
     }
 
+    public static void applyRedisConfig()
+    {
+        applyRedisConfig(conf);
+    }
+
+    public static void applyRedisConfig(Config config)
+    {
+
+        if (config.redis_cache_enabled)
+        {
+            RedisService.instance.createCacheConnection(config.redis_host, config.redis_port);
+        }
+
+    }
+
     public static void applyAddressConfig() throws ConfigurationException
     {
         applyAddressConfig(conf);
@@ -972,6 +1000,7 @@ public class DatabaseDescriptor
         localDC = snitch.getDatacenter(FBUtilities.getBroadcastAddressAndPort());
         localComparator = new Comparator<InetAddressAndPort>()
         {
+            @Override
             public int compare(InetAddressAndPort endpoint1, InetAddressAndPort endpoint2)
             {
                 boolean local1 = localDC.equals(snitch.getDatacenter(endpoint1));

@@ -45,3 +45,6 @@ row_cache_size_in_mb: 16
 enable_user_defined_functions: true
 enable_scripted_user_defined_functions: true
 prepared_statements_cache_size_mb: 1
+redis_cache_enabled: true
+redis_host: localhost
+redis_port: 6379
